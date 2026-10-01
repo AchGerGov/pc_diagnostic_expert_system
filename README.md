@@ -228,7 +228,7 @@ sudo apt install -y python3 python3-pip python3-venv python3-tk git
 **3. Клонируйте и запустите проект:**
 ```bash
 cd ~
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python3 -m venv venv
 source venv/bin/activate
@@ -252,7 +252,7 @@ python main.py
 brew install python-tk
 
 # Клонирование и запуск
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python3 -m venv venv
 source venv/bin/activate
@@ -338,7 +338,7 @@ python -m pip install --upgrade pip
 
 **Windows:**
 ```powershell
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python -m venv venv
 venv\Scripts\activate
@@ -348,7 +348,7 @@ python main.py
 
 **Linux / WSL / macOS:**
 ```bash
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python3 -m venv venv
 source venv/bin/activate
