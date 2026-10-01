@@ -97,7 +97,7 @@
 Откройте терминал (или Git Bash на Windows) и выполните:
 
 ```bash
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 ```
 
