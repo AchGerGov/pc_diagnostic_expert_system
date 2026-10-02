@@ -214,7 +214,7 @@
 Откройте терминал (или Git Bash на Windows) и выполните:
 
 ```bash
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 ```
 
@@ -348,29 +348,13 @@ sudo apt install -y python3 python3-pip python3-venv python3-tk git
 ```bash
 cd ~
 mkdir -p projects && cd projects
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 python main.py
 ```
-
-Благодаря **WSLg** (встроен в Windows 11) окно приложения отобразится прямо поверх Windows — без дополнительных X-серверов.
-
->  **На Windows 10** потребуется установить X-сервер (например, VcXsrv) и задать переменную `$DISPLAY`. Подробная инструкция — в разделе [Возможные проблемы](#-возможные-проблемы).
-
-###  Совет: работа напрямую через `/mnt/c/`
-
-Если редактируете проект в PyCharm на Windows, необязательно клонировать его в WSL — папку Windows видно в Linux:
-
-```bash
-cd /mnt/c/Users/Professional/PycharmProjects/pc_diagnostic_expert_system
-source venv/bin/activate
-python main.py
-```
-
-Так вы правите файлы в Windows — сразу видите изменения в WSL. Никакого `git pull` не нужно.
 
 ---
 
@@ -646,7 +630,7 @@ python3 -m pip install --upgrade pip
 ```bash
 kill %1
 rm -rf pc_diagnostic_expert_system
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 ```
 
 ###  `destination path already exists and is not an empty directory`
@@ -654,7 +638,7 @@ git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
 **Решение:**
 ```bash
 rm -rf pc_diagnostic_expert_system
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 ```
 
 ---
@@ -665,7 +649,7 @@ git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
 
 **Windows (PowerShell):**
 ```powershell
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python -m venv venv
 venv\Scripts\activate
@@ -675,7 +659,7 @@ python main.py
 
 **Linux / WSL / macOS:**
 ```bash
-git clone https://github.com/AchErGov/pc_diagnostic_expert_system.git
+git clone https://github.com/AchGerGov/pc_diagnostic_expert_system.git
 cd pc_diagnostic_expert_system
 python3 -m venv venv
 source venv/bin/activate
@@ -724,8 +708,6 @@ python main.py
 
 <div align="center">
 
-**⭐ Если проект оказался полезным — поставьте звезду на GitHub! ⭐**
 
-*Сделано с ❤️ для курсовой работы по интеллектуальным системам*
 
 </div>
