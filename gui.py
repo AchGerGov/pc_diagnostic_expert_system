@@ -25,7 +25,8 @@ class DiagnosticApp:
         self.current_device = "pc"
         self.engine = InferenceEngine(device=self.current_device)
         self.all_conditions = self.engine.all_conditions
-        self.check_vars = {}
+        self.check_vars = {}          # чекбоксы главного списка
+        self.ai_check_vars = {}       # чекбоксы панели ИИ-распознавания
 
         self._setup_style()
         self.create_widgets()
@@ -109,6 +110,7 @@ class DiagnosticApp:
                                    fg="white", insertbackground="white", relief="flat",
                                    highlightthickness=1, highlightcolor="#00E5FF")
         self.text_input.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.text_input.bind("<Return>", lambda e: self.ai_recognize())
 
         self.btn_ai = RoundedButton(
             input_row, text="🧠 Распознать",
@@ -119,7 +121,62 @@ class DiagnosticApp:
         )
         self.btn_ai.pack(side="right")
 
-        # --- Чекбоксы ---
+        # --- Панель выбора найденных симптомов (изначально скрыта) ---
+        self.ai_results_frame = tk.Frame(content, bg="#1A1A2E")
+        # Не пакуем сразу — покажем только после распознавания
+
+        # Заголовок панели
+        self.ai_results_header = tk.Label(
+            self.ai_results_frame,
+            text="🧠 Найдено совпадений. Отметьте нужные:",
+            font=self.font_consolas_bold, fg="#FF80AB", bg="#1A1A2E"
+        )
+        self.ai_results_header.pack(anchor="w", padx=10, pady=(5, 0))
+
+        # Контейнер со скроллом для чекбоксов найденных симптомов
+        ai_list_container = tk.Frame(self.ai_results_frame, bg="#0B0C10",
+                                     highlightthickness=1, highlightbackground="#FF4081")
+        ai_list_container.pack(fill="x", padx=10, pady=5)
+
+        self.ai_canvas = tk.Canvas(ai_list_container, bg="#0B0C10",
+                                   highlightthickness=0, height=140)
+        ai_scrollbar = tk.Scrollbar(ai_list_container, orient="vertical",
+                                    command=self.ai_canvas.yview)
+        self.ai_inner_frame = tk.Frame(self.ai_canvas, bg="#0B0C10")
+
+        self.ai_inner_frame.bind(
+            "<Configure>",
+            lambda e: self.ai_canvas.configure(scrollregion=self.ai_canvas.bbox("all"))
+        )
+        self.ai_canvas.create_window((0, 0), window=self.ai_inner_frame, anchor="nw")
+        self.ai_canvas.configure(yscrollcommand=ai_scrollbar.set)
+
+        self.ai_canvas.pack(side="left", fill="both", expand=True)
+        ai_scrollbar.pack(side="right", fill="y")
+
+        # Кнопки панели ИИ
+        ai_btn_row = tk.Frame(self.ai_results_frame, bg="#1A1A2E")
+        ai_btn_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        self.btn_apply_ai = RoundedButton(
+            ai_btn_row, text="✓ Применить выбранные",
+            command=self.apply_ai_selection,
+            width=210, height=32, corner_radius=10,
+            bg_color="#00E5FF", hover_color="#66FFFF",
+            text_color="#0B0C10", font_size=11
+        )
+        self.btn_apply_ai.pack(side="left", padx=(0, 10))
+
+        self.btn_cancel_ai = RoundedButton(
+            ai_btn_row, text="✕ Отмена",
+            command=self.hide_ai_results,
+            width=100, height=32, corner_radius=10,
+            bg_color="#FF4081", hover_color="#FF80AB",
+            text_color="#FFFFFF", font_size=11
+        )
+        self.btn_cancel_ai.pack(side="left")
+
+        # --- Чекбоксы главного списка ---
         checkbox_frame = tk.Frame(content, bg="#1A1A2E")
         checkbox_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -137,10 +194,9 @@ class DiagnosticApp:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Первое заполнение
         self._populate_checkboxes()
 
-        # --- Кнопки ---
+        # --- Кнопки управления ---
         btn_frame = tk.Frame(content, bg="#1A1A2E")
         btn_frame.pack(pady=10)
 
@@ -192,22 +248,101 @@ class DiagnosticApp:
             cb.pack(fill="x", padx=5, pady=2)
 
     def _switch_device(self, device):
-        """Переключает тип устройства и перестраивает интерфейс."""
         if device == self.current_device:
             return
         self.current_device = device
         self.engine.set_device(device)
         self.all_conditions = self.engine.all_conditions
         self._populate_checkboxes()
+        self.hide_ai_results()
 
-        # Обновляем подпись
         name = "ПК" if device == "pc" else "Ноутбук"
         self.device_label.config(text=f"(активно: {name})")
 
-        # Очищаем результат
         self.result_text.config(state="normal")
         self.result_text.delete(1.0, tk.END)
         self.result_text.config(state="disabled")
+
+    # ============================================================
+    # ЛОГИКА ИИ-РАСПОЗНАВАНИЯ
+    # ============================================================
+    def ai_recognize(self):
+        """Распознаёт симптомы в тексте и показывает панель выбора."""
+        raw_text = self.text_input.get()
+        if not raw_text.strip():
+            self.show_result("⚠️ Введите описание симптомов в текстовое поле.")
+            return
+
+        recognized = match_symptoms(raw_text, self.all_conditions)
+        if not recognized:
+            self.show_result("🤔 ИИ не распознал знакомых симптомов в вашем тексте.\n"
+                             "Попробуйте описать проблему иначе или выберите симптомы вручную.")
+            self.hide_ai_results()
+            return
+
+        # Показываем панель с найденными симптомами
+        self._show_ai_results(recognized)
+
+    def _show_ai_results(self, symptoms):
+        """Отображает панель с чекбоксами найденных симптомов."""
+        # Очищаем прежние чекбоксы
+        for widget in self.ai_inner_frame.winfo_children():
+            widget.destroy()
+        self.ai_check_vars = {}
+
+        # Заголовок
+        self.ai_results_header.config(
+            text=f"🧠 Найдено совпадений: {len(symptoms)}. Отметьте нужные:"
+        )
+
+        # Создаём чекбоксы
+        for symptom in symptoms:
+            var = tk.BooleanVar(value=True)  # по умолчанию все отмечены
+            self.ai_check_vars[symptom] = var
+            cb = tk.Checkbutton(
+                self.ai_inner_frame, text=symptom, variable=var,
+                font=self.font_consolas, fg="#FFFFFF", bg="#0B0C10",
+                selectcolor="#1A1A2E", activebackground="#0B0C10",
+                activeforeground="#00E5FF", relief="flat", bd=0,
+                padx=10, pady=4, anchor="w", justify="left", wraplength=850
+            )
+            cb.pack(fill="x", padx=5, pady=1)
+
+        # Показываем панель (после AI-блока, перед главным списком)
+        self.ai_results_frame.pack(fill="x", padx=20, pady=(5, 0),
+                                   after=self.text_input.master.master)
+
+        self.show_result(f"🧠 ИИ нашёл {len(symptoms)} подходящих симптомов.\n"
+                         "Снимите галочки с тех, которые не подходят, "
+                         "затем нажмите «✓ Применить выбранные».")
+
+    def apply_ai_selection(self):
+        """Переносит выбранные симптомы в главный список чекбоксов."""
+        selected = [s for s, var in self.ai_check_vars.items() if var.get()]
+        if not selected:
+            self.show_result("⚠️ Вы не отметили ни одного симптома в панели ИИ.\n"
+                             "Выберите хотя бы один или нажмите «✕ Отмена».")
+            return
+
+        # Снимаем все галочки в главном списке и ставим только выбранные
+        for var in self.check_vars.values():
+            var.set(False)
+        for symptom in selected:
+            if symptom in self.check_vars:
+                self.check_vars[symptom].set(True)
+
+        self.hide_ai_results()
+        self.text_input.delete(0, tk.END)
+        self.show_result(
+            f"✅ В основной список добавлено симптомов: {len(selected)}\n\n"
+            "- " + "\n- ".join(selected) +
+            "\n\n🔍 Теперь нажмите «Диагностировать» для получения рекомендаций."
+        )
+
+    def hide_ai_results(self):
+        """Скрывает панель ИИ-распознавания."""
+        self.ai_results_frame.pack_forget()
+        self.ai_check_vars = {}
 
     # ============================================================
     # ВКЛАДКА 2: ИНФОРМАЦИЯ О СИСТЕМЕ
@@ -369,7 +504,8 @@ class DiagnosticApp:
     def perform_diagnosis(self):
         facts = [cond for cond, var in self.check_vars.items() if var.get()]
         if not facts:
-            self.show_result("⚠️ Вы не отметили ни одного симптома.")
+            self.show_result("⚠️ Вы не отметили ни одного симптома.\n"
+                             "Отметьте симптомы в списке или используйте ИИ-распознавание.")
             return
         diagnosis = self.engine.diagnose_from_facts(facts)
         self.show_result(self.format_diagnosis(diagnosis))
@@ -399,25 +535,7 @@ class DiagnosticApp:
         for var in self.check_vars.values():
             var.set(False)
         self.text_input.delete(0, tk.END)
+        self.hide_ai_results()
         self.result_text.config(state="normal")
         self.result_text.delete(1.0, tk.END)
         self.result_text.config(state="disabled")
-
-    def ai_recognize(self):
-        raw_text = self.text_input.get()
-        if not raw_text.strip():
-            self.show_result("⚠️ Введите описание симптомов.")
-            return
-        recognized = match_symptoms(raw_text, self.all_conditions)
-        if not recognized:
-            self.show_result("🤔 ИИ не распознал знакомых симптомов.\n"
-                             "Попробуйте описать проблему иначе.")
-            return
-        for var in self.check_vars.values():
-            var.set(False)
-        for symptom in recognized:
-            if symptom in self.check_vars:
-                self.check_vars[symptom].set(True)
-        self.show_result(f"🧠 ИИ распознал следующие симптомы:\n- " + "\n- ".join(recognized) +
-                         "\n\n✅ Нажмите «Диагностировать».")
-        self.text_input.delete(0, tk.END)
